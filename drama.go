@@ -21,18 +21,18 @@ import (
 	"runtime"
 )
 
-type drama struct {
+type Drama struct {
 	registry map[string]interface{}
 }
 
-func NewDrama() *drama {
-	return &drama{
+func NewDrama() *Drama {
+	return &Drama{
 		registry: make(map[string]interface{}, 0),
 	}
 }
 
 // Import imports new funcs or option types into registry.
-func (d *drama) Import(funcOrStruct ...interface{}) error {
+func (d *Drama) Import(funcOrStruct ...interface{}) error {
 	if len(funcOrStruct) == 0 {
 		return errors.New("nothing to import")
 	}
@@ -51,7 +51,7 @@ func (d *drama) Import(funcOrStruct ...interface{}) error {
 
 			fptr := reflect.ValueOf(fs).Pointer()
 			fullName = runtime.FuncForPC(fptr).Name()
-		} else if fsType.Kind() == reflect.Pointer {
+		} else if fsType.Kind() == reflect.Ptr {
 			realType := fsType.Elem()
 			fullName = fmt.Sprintf("%s.%s", realType.PkgPath(), realType.Name())
 		}
@@ -63,7 +63,7 @@ func (d *drama) Import(funcOrStruct ...interface{}) error {
 }
 
 // MakeOptFunc makes a option func variable with name and fields.
-func (d *drama) MakeOptFunc(name string, fields map[string]interface{}) (interface{}, error) {
+func (d *Drama) MakeOptFunc(name string, fields map[string]interface{}) (interface{}, error) {
 	opt, ok := d.registry[name]
 	if !ok {
 		return nil, fmt.Errorf("no type found for: %v", name)
@@ -94,7 +94,7 @@ func (d *drama) MakeOptFunc(name string, fields map[string]interface{}) (interfa
 }
 
 // Use makes a new Object with given func name and arguments.
-func (d *drama) Use(name string, args ...interface{}) (*Object, error) {
+func (d *Drama) Use(name string, args ...interface{}) (*Object, error) {
 	fn, ok := d.registry[name]
 	if !ok {
 		return nil, fmt.Errorf("no func found for: %v", name)
