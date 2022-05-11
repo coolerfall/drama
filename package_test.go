@@ -48,7 +48,7 @@ func (c *Checker) WithName(name string) {
 }
 
 func TestDynamicFunc(t *testing.T) {
-	d := NewDrama()
+	d := NewPackage()
 	_ = d.Import(NewChecker)
 
 	fn, err := d.Use("github.com/coolerfall/drama.NewChecker")
@@ -63,7 +63,7 @@ func TestDynamicFunc(t *testing.T) {
 }
 
 func TestOptFunc(t *testing.T) {
-	d := NewDrama()
+	d := NewPackage()
 	_ = d.Import(NewChecker, (*CheckerOption)(nil))
 
 	var cf = map[string]interface{}{"Version": 6}
