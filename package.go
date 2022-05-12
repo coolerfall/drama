@@ -17,23 +17,25 @@ package drama
 import (
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"reflect"
 	"runtime"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type Package struct {
-	registry map[string]interface{}
+	registry map[string]any
 }
 
+// NewPackage creates a new instance for Package.
 func NewPackage() *Package {
 	return &Package{
-		registry: make(map[string]interface{}, 0),
+		registry: make(map[string]any, 0),
 	}
 }
 
-// Import imports new funcs or option types into registry.
-func (p *Package) Import(funcOrStruct ...interface{}) error {
+// Import imports new funcs or struct types into registry.
+func (p *Package) Import(funcOrStruct ...any) error {
 	if len(funcOrStruct) == 0 {
 		return errors.New("nothing to import")
 	}
@@ -47,14 +49,21 @@ func (p *Package) Import(funcOrStruct ...interface{}) error {
 		fsType := reflect.TypeOf(fs)
 		if fsType.Kind() == reflect.Func {
 			if fsType.NumOut() != 1 {
-				return errors.New("only one out parameter support")
+				return errors.New("only func with one out parameter supported")
+			}
+
+			outType := fsType.Out(0)
+			if outType.Kind() != reflect.Pointer && outType.Elem().Kind() != reflect.Struct {
+				return errors.New("only func with struct pointer out parameter supported")
 			}
 
 			fptr := reflect.ValueOf(fs).Pointer()
 			fullName = runtime.FuncForPC(fptr).Name()
-		} else if fsType.Kind() == reflect.Ptr {
+		} else if fsType.Kind() == reflect.Pointer && fsType.Elem().Kind() == reflect.Struct {
 			realType := fsType.Elem()
 			fullName = fmt.Sprintf("%s.%s", realType.PkgPath(), realType.Name())
+		} else {
+			return errors.New("only func or struct type supported")
 		}
 
 		p.registry[fullName] = fs
@@ -63,8 +72,24 @@ func (p *Package) Import(funcOrStruct ...interface{}) error {
 	return nil
 }
 
-// MakeOptFunc makes a option func variable with name and fields.
-func (p *Package) MakeOptFunc(name string, fields map[string]interface{}) (interface{}, error) {
+// HasExportedField checks if struct has exported field with given package path.
+func (p *Package) HasExportedField(name, fieldName string) bool {
+	opt, ok := p.registry[name]
+	if !ok {
+		return false
+	}
+
+	optType := reflect.TypeOf(opt)
+	field, ok := optType.Elem().FieldByName(fieldName)
+	if !ok {
+		return false
+	}
+
+	return field.IsExported()
+}
+
+// MakeOptFunc makes a option func variable package with name and fields.
+func (p *Package) MakeOptFunc(name string, fields map[string]any) (any, error) {
 	opt, ok := p.registry[name]
 	if !ok {
 		return nil, fmt.Errorf("no type found for: %v", name)
@@ -99,21 +124,44 @@ func (p *Package) MakeOptFunc(name string, fields map[string]interface{}) (inter
 	return optFunc.Elem().Interface(), nil
 }
 
-// Use makes a new Object with given func name and arguments.
-func (p *Package) Use(name string, args ...interface{}) (*Object, error) {
-	fn, ok := p.registry[name]
+// Use makes a new Object with given package path and arguments.
+func (p *Package) Use(name string, argsOrFields ...any) (*Object, error) {
+	fnOrStruct, ok := p.registry[name]
 	if !ok {
 		return nil, fmt.Errorf("no func found for: %v", name)
 	}
 
-	if reflect.TypeOf(fn).Kind() != reflect.Func {
-		return nil, fmt.Errorf("%v is not a func", name)
-	}
+	tp := reflect.TypeOf(fnOrStruct)
+	kind := tp.Kind()
+	if kind == reflect.Func {
+		in := make([]reflect.Value, 0)
+		for _, arg := range argsOrFields {
+			in = append(in, reflect.ValueOf(arg))
+		}
+		return newObject(reflect.ValueOf(fnOrStruct).Call(in)[0]), nil
+	} else {
+		st := reflect.New(tp.Elem())
 
-	in := make([]reflect.Value, 0)
-	for _, arg := range args {
-		in = append(in, reflect.ValueOf(arg))
-	}
+		if len(argsOrFields) == 0 {
+			return newObject(st), nil
+		}
 
-	return newObject(reflect.ValueOf(fn).Call(in)[0]), nil
+		fields, ok := argsOrFields[0].(map[string]any)
+		if !ok {
+			return nil, fmt.Errorf("args should be a map for using struct")
+		}
+
+		for k := range fields {
+			field := st.Elem().FieldByName(k)
+			if !field.CanSet() {
+				return nil, fmt.Errorf("cannot find field '%v' in %s", k, name)
+			}
+		}
+
+		if err := mapstructure.WeakDecode(fields, st.Interface()); err != nil {
+			return nil, err
+		}
+
+		return newObject(st), nil
+	}
 }
