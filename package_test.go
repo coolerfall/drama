@@ -48,6 +48,34 @@ func (c *Checker) WithName(name string) {
 	c.name = name
 }
 
+type Runner interface {
+	Run() string
+}
+
+type CheckRunner struct {
+}
+
+func (r *CheckRunner) Run() string {
+	return "run"
+}
+
+func NewRunner() Runner {
+	return &CheckRunner{}
+}
+
+func TestInterface(t *testing.T) {
+	d := NewPackage()
+	err := d.Import(NewRunner)
+	assert.Nil(t, err)
+
+	obj, err := d.Use("github.com/coolerfall/drama.NewRunner")
+	assert.Nil(t, err)
+	o, err := obj.Call("Run")
+	assert.Nil(t, err)
+	assert.Equal(t, 1, len(o))
+	assert.Equal(t, "run", o[0])
+}
+
 func TestPackageErrorType(t *testing.T) {
 	errType := 1
 	d := NewPackage()
@@ -62,7 +90,7 @@ func TestPackageUseFunc(t *testing.T) {
 	fn, err := d.Use("github.com/coolerfall/drama.NewChecker")
 	assert.Nil(t, err)
 
-	err, _ = fn.Call("WithName", "dynamic")
+	_, err = fn.Call("WithName", "dynamic")
 	assert.Nil(t, err)
 
 	c, ok := fn.Itf().(*Checker)

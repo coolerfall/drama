@@ -53,8 +53,11 @@ func (p *Package) Import(funcOrStruct ...any) error {
 			}
 
 			outType := fsType.Out(0)
-			if outType.Kind() != reflect.Pointer && outType.Elem().Kind() != reflect.Struct {
-				return errors.New("only func with struct pointer out parameter supported")
+			outKind := outType.Kind()
+			if outKind != reflect.Interface && outKind != reflect.Pointer &&
+				outType.Elem().Kind() != reflect.Struct {
+				return errors.New("only func with struct pointer or " +
+					"interface out parameter supported")
 			}
 
 			fptr := reflect.ValueOf(fs).Pointer()
