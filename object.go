@@ -30,12 +30,12 @@ func newObject(obj reflect.Value) *Object {
 }
 
 // Itf returns value of current Object.
-func (o *Object) Itf() interface{} {
+func (o *Object) Itf() any {
 	return o.objValue.Interface()
 }
 
 // Call invokes func on this object with or without arguments.
-func (o *Object) Call(name string, args ...interface{}) (error, []interface{}) {
+func (o *Object) Call(name string, args ...any) (error, []any) {
 	in := make([]reflect.Value, 0)
 
 	for _, arg := range args {
@@ -52,10 +52,26 @@ func (o *Object) Call(name string, args ...interface{}) (error, []interface{}) {
 		return nil, nil
 	}
 
-	itfs := make([]interface{}, 0)
+	itfs := make([]any, 0)
 	for _, v := range out {
 		itfs = append(itfs, v.Interface())
 	}
 
 	return nil, itfs
+}
+
+// Assign assign the given value to the exported field with name.
+func (o *Object) Assign(name string, value any) error {
+	field := o.objValue.Elem().FieldByName(name)
+	if !field.CanSet() {
+		return fmt.Errorf("field %s cannot be set", name)
+	}
+
+	if reflect.TypeOf(value).Kind() != field.Kind() {
+		return fmt.Errorf("field %s cannot be set with different type", name)
+	}
+
+	field.Set(reflect.ValueOf(value))
+
+	return nil
 }
