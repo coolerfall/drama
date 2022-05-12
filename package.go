@@ -17,6 +17,7 @@ package drama
 import (
 	"errors"
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"reflect"
 	"runtime"
 )
@@ -70,21 +71,26 @@ func (p *Package) MakeOptFunc(name string, fields map[string]interface{}) (inter
 	}
 
 	optType := reflect.TypeOf(opt)
+
+	for k := range fields {
+		field, ok := optType.Elem().FieldByName(k)
+		if !ok {
+			return nil, fmt.Errorf("cannot find field '%s' in %s", k, name)
+		}
+
+		if !field.IsExported() {
+			return nil, fmt.Errorf("field '%s' is not exported", k)
+		}
+	}
+
 	optFuncType := reflect.FuncOf([]reflect.Type{optType}, []reflect.Type{}, false)
 	optProxyFunc := reflect.MakeFunc(optFuncType, func(args []reflect.Value) []reflect.Value {
 		if len(args) != 1 {
 			return nil
 		}
 
-		opt := args[0]
-		for k, v := range fields {
-			field := opt.Elem().FieldByName(k)
+		_ = mapstructure.WeakDecode(fields, args[0].Interface())
 
-			if !field.CanSet() {
-				continue
-			}
-			field.Set(reflect.ValueOf(v))
-		}
 		return nil
 	})
 	optFunc := reflect.New(optFuncType)

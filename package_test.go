@@ -27,6 +27,7 @@ type Checker struct {
 
 type CheckerOption struct {
 	Version int
+	private string
 }
 
 func NewChecker(opts ...func(*CheckerOption)) *Checker {
@@ -66,7 +67,7 @@ func TestOptFunc(t *testing.T) {
 	d := NewPackage()
 	_ = d.Import(NewChecker, (*CheckerOption)(nil))
 
-	var cf = map[string]interface{}{"Version": 6}
+	var cf = map[string]interface{}{"Version": "6"}
 	optFn, err := d.MakeOptFunc("github.com/coolerfall/drama.CheckerOption", cf)
 	assert.Nil(t, err)
 	fn, err := d.Use("github.com/coolerfall/drama.NewChecker", optFn)
@@ -74,4 +75,13 @@ func TestOptFunc(t *testing.T) {
 	c, ok := fn.Itf().(*Checker)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, 6, c.version)
+}
+
+func TestOptFuncPrivate(t *testing.T) {
+	d := NewPackage()
+	_ = d.Import(NewChecker, (*CheckerOption)(nil))
+
+	var cf = map[string]interface{}{"private": "6"}
+	_, err := d.MakeOptFunc("github.com/coolerfall/drama.CheckerOption", cf)
+	assert.NotNil(t, err)
 }
