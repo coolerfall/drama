@@ -35,7 +35,7 @@ func (o *Object) Itf() any {
 }
 
 // Call invokes func on this object with or without arguments.
-func (o *Object) Call(name string, args ...any) (error, []any) {
+func (o *Object) Call(name string, args ...any) ([]any, error) {
 	in := make([]reflect.Value, 0)
 
 	for _, arg := range args {
@@ -45,7 +45,7 @@ func (o *Object) Call(name string, args ...any) (error, []any) {
 	method := o.objValue.MethodByName(name)
 	if !method.IsValid() || method.IsNil() {
 		elemName := o.objValue.Type().Elem().Name()
-		return fmt.Errorf("func '%s' not found on '%v'", name, elemName), nil
+		return nil, fmt.Errorf("func '%s' not found on '%v'", name, elemName)
 	}
 	out := method.Call(in)
 	if len(out) == 0 {
@@ -57,7 +57,7 @@ func (o *Object) Call(name string, args ...any) (error, []any) {
 		itfs = append(itfs, v.Interface())
 	}
 
-	return nil, itfs
+	return itfs, nil
 }
 
 // Assign assign the given value to the exported field with name.
