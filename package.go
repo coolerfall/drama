@@ -117,6 +117,7 @@ func (p *Package) MakeOptFunc(name string, fields map[string]any) (any, error) {
 			return nil
 		}
 
+		// map all fields to the option
 		_ = mapstructure.WeakDecode(fields, args[0].Interface())
 
 		return nil
@@ -151,16 +152,18 @@ func (p *Package) Use(name string, argsOrFields ...any) (*Object, error) {
 
 		fields, ok := argsOrFields[0].(map[string]any)
 		if !ok {
-			return nil, fmt.Errorf("args should be a map for using struct")
+			return nil, fmt.Errorf("args should be a map when using struct")
 		}
 
+		// check if field can be set
 		for k := range fields {
 			field := st.Elem().FieldByName(k)
 			if !field.CanSet() {
-				return nil, fmt.Errorf("cannot find field '%v' in %s", k, name)
+				return nil, fmt.Errorf("cannot find exported field '%v' in %s", k, name)
 			}
 		}
 
+		// map all fields to struct
 		if err := mapstructure.WeakDecode(fields, st.Interface()); err != nil {
 			return nil, err
 		}
