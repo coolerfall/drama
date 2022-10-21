@@ -60,7 +60,7 @@ func (o *Object) Call(name string, args ...any) ([]any, error) {
 	return itfs, nil
 }
 
-// Assign assign the given value to the exported field with name.
+// Assign assigns the given value to the exported field with name.
 func (o *Object) Assign(name string, value any) error {
 	field := o.objValue.Elem().FieldByName(name)
 	if !field.CanSet() {
