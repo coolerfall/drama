@@ -91,7 +91,7 @@ func (p *Package) HasExportedField(name, fieldName string) bool {
 	return field.IsExported()
 }
 
-// MakeOptFunc makes a option func variable package with name and fields.
+// MakeOptFunc makes an option func variable package with name and fields.
 func (p *Package) MakeOptFunc(name string, fields map[string]any) (any, error) {
 	opt, ok := p.registry[name]
 	if !ok {

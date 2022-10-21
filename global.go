@@ -14,7 +14,15 @@
 
 package drama
 
-var globalPackage = NewPackage()
+import (
+	"embed"
+	"io/fs"
+)
+
+var (
+	globalPackage  = NewPackage()
+	globalResource = NewResource()
+)
 
 // Import is global func for Package.Import.
 func Import(funcOrStruct ...any) error {
@@ -34,4 +42,16 @@ func MakeOptFunc(name string, fields map[string]any) (any, error) {
 // Use is global func for Package.Use.
 func Use(name string, argsOrFields ...any) (*Object, error) {
 	return globalPackage.Use(name, argsOrFields...)
+}
+
+// Register register embed.FS into drama.
+func Register(fss ...embed.FS) {
+	for _, fs := range fss {
+		globalResource.Register(fs)
+	}
+}
+
+// Load loads resources file from drama with given path.
+func Load(path string) (fs.File, error) {
+	return globalResource.Load(path)
 }
