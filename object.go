@@ -29,8 +29,8 @@ func newObject(obj reflect.Value) *Object {
 	}
 }
 
-// Itf returns value of current Object.
-func (o *Object) Itf() any {
+// Interface returns real instance of current Object.
+func (o *Object) Interface() any {
 	return o.objValue.Interface()
 }
 
@@ -52,12 +52,12 @@ func (o *Object) Call(name string, args ...any) ([]any, error) {
 		return nil, nil
 	}
 
-	itfs := make([]any, 0)
+	intfs := make([]any, 0)
 	for _, v := range out {
-		itfs = append(itfs, v.Interface())
+		intfs = append(intfs, v.Interface())
 	}
 
-	return itfs, nil
+	return intfs, nil
 }
 
 // Assign assigns the given value to the exported field with name.
@@ -74,4 +74,20 @@ func (o *Object) Assign(name string, value any) error {
 	field.Set(reflect.ValueOf(value))
 
 	return nil
+}
+
+// Exported checks if struct has exported field or func with given name.
+func (o *Object) Exported(name string) bool {
+	structType := o.objValue.Type()
+	field, ok := structType.Elem().FieldByName(name)
+	if ok {
+		return field.IsExported()
+	}
+
+	method := o.objValue.MethodByName(name)
+	if !method.IsValid() || method.IsNil() {
+		return false
+	}
+
+	return true
 }

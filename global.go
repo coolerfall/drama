@@ -29,9 +29,9 @@ func Import(funcOrStruct ...any) error {
 	return globalPackage.Import(funcOrStruct...)
 }
 
-// HasExportedField is global func for Package.HasExportedField.
-func HasExportedField(name, fieldName string) bool {
-	return globalPackage.HasExportedField(name, fieldName)
+// Exported is global func for Package.Exported.
+func Exported(name, fieldName string) bool {
+	return globalPackage.Exported(name, fieldName)
 }
 
 // MakeOptFunc is global func for Package.MakeOptFunc.

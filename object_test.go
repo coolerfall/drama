@@ -44,3 +44,13 @@ func TestObjectCall(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "dynamic", os.Name)
 }
+
+func TestExported(t *testing.T) {
+	os := &ObjectStruct{}
+	obj := newObject(reflect.ValueOf(os))
+	exported := obj.Exported("Name")
+	assert.Equal(t, true, exported)
+
+	exported = obj.Exported("SetName")
+	assert.Equal(t, true, exported)
+}

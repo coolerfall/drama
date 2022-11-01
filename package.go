@@ -75,20 +75,25 @@ func (p *Package) Import(funcOrStruct ...any) error {
 	return nil
 }
 
-// HasExportedField checks if struct has exported field with given package path.
-func (p *Package) HasExportedField(name, fieldName string) bool {
-	opt, ok := p.registry[name]
+// Exported checks if struct has exported field or func with given package path and name.
+func (p *Package) Exported(path, name string) bool {
+	opt, ok := p.registry[path]
 	if !ok {
 		return false
 	}
 
-	optType := reflect.TypeOf(opt)
-	field, ok := optType.Elem().FieldByName(fieldName)
+	structType := reflect.TypeOf(opt)
+	field, ok := structType.Elem().FieldByName(name)
+	if ok {
+		return field.IsExported()
+	}
+
+	method, ok := structType.MethodByName(name)
 	if !ok {
 		return false
 	}
 
-	return field.IsExported()
+	return method.IsExported()
 }
 
 // MakeOptFunc makes an option func variable package with name and fields.
