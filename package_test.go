@@ -30,6 +30,10 @@ type CheckerOption struct {
 	private string
 }
 
+func (o *CheckerOption) SetVersion(ver int) {
+	o.Version = ver
+}
+
 func NewChecker(opts ...func(*CheckerOption)) *Checker {
 	opt := &CheckerOption{
 		Version: 1,
@@ -93,7 +97,7 @@ func TestPackageUseFunc(t *testing.T) {
 	_, err = fn.Call("WithName", "dynamic")
 	assert.Nil(t, err)
 
-	c, ok := fn.Itf().(*Checker)
+	c, ok := fn.Interface().(*Checker)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, "dynamic", c.name)
 }
@@ -104,9 +108,11 @@ func TestPackageUseStruct(t *testing.T) {
 	var cf = map[string]any{"Version": "6"}
 	obj, err := d.Use("github.com/coolerfall/drama.CheckerOption", cf)
 	assert.Nil(t, err)
-	co, ok := obj.Itf().(*CheckerOption)
+	co, ok := obj.Interface().(*CheckerOption)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, 6, co.Version)
+	exported := obj.Exported("Version")
+	assert.Equal(t, true, exported)
 }
 
 func TestPackageMakeOptFunc(t *testing.T) {
@@ -118,7 +124,7 @@ func TestPackageMakeOptFunc(t *testing.T) {
 	assert.Nil(t, err)
 	fn, err := d.Use("github.com/coolerfall/drama.NewChecker", optFn)
 	assert.Nil(t, err)
-	c, ok := fn.Itf().(*Checker)
+	c, ok := fn.Interface().(*Checker)
 	assert.Equal(t, true, ok)
 	assert.Equal(t, 6, c.version)
 }
@@ -132,9 +138,11 @@ func TestPackageOptFuncPrivate(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestPackageHasExportedField(t *testing.T) {
+func TestPackageExported(t *testing.T) {
 	d := NewPackage()
 	_ = d.Import(NewChecker, (*CheckerOption)(nil))
-	b := d.HasExportedField("github.com/coolerfall/drama.CheckerOption", "Version")
-	assert.Equal(t, true, b)
+	exported := d.Exported("github.com/coolerfall/drama.CheckerOption", "Version")
+	assert.Equal(t, true, exported)
+	exported = d.Exported("github.com/coolerfall/drama.CheckerOption", "SetVersion")
+	assert.Equal(t, true, exported)
 }
