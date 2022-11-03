@@ -15,6 +15,7 @@
 package drama
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -23,9 +24,17 @@ type Object struct {
 	objValue reflect.Value
 }
 
-func newObject(obj reflect.Value) *Object {
+// NewObject creates a new Object with given value.
+func NewObject(obj any) *Object {
+	var objValue reflect.Value
+	if value, ok := obj.(reflect.Value); ok {
+		objValue = value
+	} else {
+		objValue = reflect.ValueOf(obj)
+	}
+
 	return &Object{
-		objValue: obj,
+		objValue: objValue,
 	}
 }
 
@@ -52,16 +61,20 @@ func (o *Object) Call(name string, args ...any) ([]any, error) {
 		return nil, nil
 	}
 
-	intfs := make([]any, 0)
+	output := make([]any, 0)
 	for _, v := range out {
-		intfs = append(intfs, v.Interface())
+		output = append(output, v.Interface())
 	}
 
-	return intfs, nil
+	return output, nil
 }
 
 // Assign assigns the given value to the exported field with name.
 func (o *Object) Assign(name string, value any) error {
+	if o.objValue.Kind() != reflect.Pointer {
+		return errors.New("object value should be pointer")
+	}
+
 	field := o.objValue.Elem().FieldByName(name)
 	if !field.CanSet() {
 		return fmt.Errorf("field %s cannot be set", name)

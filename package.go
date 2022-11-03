@@ -147,12 +147,12 @@ func (p *Package) Use(name string, argsOrFields ...any) (*Object, error) {
 		for _, arg := range argsOrFields {
 			in = append(in, reflect.ValueOf(arg))
 		}
-		return newObject(reflect.ValueOf(fnOrStruct).Call(in)[0]), nil
+		return NewObject(reflect.ValueOf(fnOrStruct).Call(in)[0]), nil
 	} else {
 		st := reflect.New(tp.Elem())
 
 		if len(argsOrFields) == 0 {
-			return newObject(st), nil
+			return NewObject(st), nil
 		}
 
 		fields, ok := argsOrFields[0].(map[string]any)
@@ -173,6 +173,6 @@ func (p *Package) Use(name string, argsOrFields ...any) (*Object, error) {
 			return nil, err
 		}
 
-		return newObject(st), nil
+		return NewObject(st), nil
 	}
 }

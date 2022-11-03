@@ -31,7 +31,7 @@ func (os *ObjectStruct) SetName(name string) {
 
 func TestObjectAssign(t *testing.T) {
 	os := &ObjectStruct{}
-	obj := newObject(reflect.ValueOf(os))
+	obj := NewObject(reflect.ValueOf(os))
 	err := obj.Assign("Name", "obj")
 	assert.Nil(t, err)
 	assert.Equal(t, "obj", os.Name)
@@ -39,7 +39,7 @@ func TestObjectAssign(t *testing.T) {
 
 func TestObjectCall(t *testing.T) {
 	os := &ObjectStruct{}
-	obj := newObject(reflect.ValueOf(os))
+	obj := NewObject(reflect.ValueOf(os))
 	err, _ := obj.Call("SetName", "dynamic")
 	assert.Nil(t, err)
 	assert.Equal(t, "dynamic", os.Name)
@@ -47,7 +47,7 @@ func TestObjectCall(t *testing.T) {
 
 func TestExported(t *testing.T) {
 	os := &ObjectStruct{}
-	obj := newObject(reflect.ValueOf(os))
+	obj := NewObject(reflect.ValueOf(os))
 	exported := obj.Exported("Name")
 	assert.Equal(t, true, exported)
 
