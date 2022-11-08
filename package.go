@@ -144,14 +144,16 @@ func (p *Package) Use(name string, argsOrFields ...any) (*Object, error) {
 	kind := tp.Kind()
 	if kind == reflect.Func {
 		in := make([]reflect.Value, 0)
-		for _, arg := range argsOrFields {
-			in = append(in, reflect.ValueOf(arg))
+		if !reflect.ValueOf(argsOrFields).IsNil() {
+			for _, arg := range argsOrFields {
+				in = append(in, reflect.ValueOf(arg))
+			}
 		}
 		return NewObject(reflect.ValueOf(fnOrStruct).Call(in)[0]), nil
 	} else {
 		st := reflect.New(tp.Elem())
 
-		if len(argsOrFields) == 0 {
+		if reflect.ValueOf(argsOrFields).IsNil() || len(argsOrFields) == 0 {
 			return NewObject(st), nil
 		}
 
